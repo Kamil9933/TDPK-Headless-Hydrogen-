@@ -2,8 +2,8 @@ import {Suspense, useState} from 'react';
 import {Await, NavLink} from 'react-router';
 
 /**
- * Footer — rebuilt for ThirdDimension brand identity.
- * Dark footer with TD wordmark, newsletter input, multi-column nav, and copyright.
+ * Footer — ThirdDimension brand identity.
+ * White background, black text, #8252f1 purple links/hover.
  */
 export function Footer({footer: footerPromise, header, publicStoreDomain}) {
   const [email, setEmail] = useState('');
@@ -18,19 +18,19 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
   };
 
   return (
-    <footer className="bg-black text-white">
+    <footer className="bg-white text-black">
       <div className="mx-auto max-w-6xl px-6 pt-16 pb-8">
         {/* Top: Wordmark + Newsletter */}
         <div className="mb-12 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
           {/* TD Wordmark */}
           <div>
             <span
-              className="text-4xl font-bold tracking-tight text-white"
+              className="text-4xl font-bold tracking-tight text-black"
               style={{fontFamily: 'var(--font-heading)'}}
             >
               TD
             </span>
-            <p className="mt-2 max-w-xs text-sm text-neutral-400">
+            <p className="mt-2 max-w-xs text-sm text-neutral-500">
               3D-printed collectibles, crafted with obsessive attention to
               detail.
             </p>
@@ -39,12 +39,12 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
           {/* Newsletter */}
           <div className="w-full max-w-sm">
             <h3
-              className="mb-2 text-sm font-semibold uppercase tracking-wider"
+              className="mb-2 text-sm font-semibold uppercase tracking-wider text-black"
               style={{fontFamily: 'var(--font-accent)'}}
             >
               Stay in the Loop
             </h3>
-            <p className="mb-3 text-sm text-neutral-400">
+            <p className="mb-3 text-sm text-neutral-500">
               New drops, restocks, and exclusives. No spam.
             </p>
             {subscribed ? (
@@ -59,7 +59,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="flex-1 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition focus:border-[#8252f1]"
+                  className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm text-black placeholder-neutral-400 outline-none transition focus:border-[#8252f1]"
                 />
                 <button
                   type="submit"
@@ -77,11 +77,11 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
         <Suspense fallback={null}>
           <Await resolve={footerPromise}>
             {(footer) => (
-              <div className="grid grid-cols-2 gap-8 border-t border-neutral-800 py-10 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-8 border-t border-neutral-200 py-10 sm:grid-cols-4">
                 {/* Column 1: Quick Links */}
                 <div>
                   <h4
-                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-black"
                     style={{fontFamily: 'var(--font-accent)'}}
                   >
                     Quick Links
@@ -96,7 +96,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                 {/* Column 2: Support */}
                 <div>
                   <h4
-                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-black"
                     style={{fontFamily: 'var(--font-accent)'}}
                   >
                     Support
@@ -121,7 +121,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                 {/* Column 3: Connect */}
                 <div>
                   <h4
-                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-black"
                     style={{fontFamily: 'var(--font-accent)'}}
                   >
                     Connect
@@ -143,7 +143,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                 {footer?.menu && (
                   <div>
                     <h4
-                      className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                      className="mb-4 text-sm font-semibold uppercase tracking-wider text-black"
                       style={{fontFamily: 'var(--font-accent)'}}
                     >
                       More
@@ -165,7 +165,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                               href={url}
                               rel="noopener noreferrer"
                               target="_blank"
-                              className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+                              className="text-sm text-neutral-500 transition hover:text-[#8252f1]"
                             >
                               {item.title}
                             </a>
@@ -176,7 +176,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                               end
                               prefetch="intent"
                               to={url}
-                              className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+                              className="text-sm text-neutral-500 transition hover:text-[#8252f1]"
                             >
                               {item.title}
                             </NavLink>
@@ -192,7 +192,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
         </Suspense>
 
         {/* Bottom: Copyright */}
-        <div className="border-t border-neutral-800 pt-6 text-center text-xs text-neutral-500">
+        <div className="border-t border-neutral-200 pt-6 text-center text-xs text-neutral-500">
           &copy; {new Date().getFullYear()} ThirdDimension. All rights reserved.
         </div>
       </div>
@@ -207,7 +207,7 @@ function FooterLink({to, children}) {
         end
         prefetch="intent"
         to={to}
-        className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+        className="text-sm text-neutral-500 transition hover:text-[#8252f1]"
       >
         {children}
       </NavLink>
@@ -222,7 +222,7 @@ function FooterExternalLink({href, children}) {
         href={href}
         rel="noopener noreferrer"
         target="_blank"
-        className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+        className="text-sm text-neutral-500 transition hover:text-[#8252f1]"
       >
         {children}
       </a>
