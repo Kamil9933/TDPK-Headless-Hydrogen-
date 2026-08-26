@@ -6,6 +6,10 @@
   --header-height: 64px;
   --color-dark: #000;
   --color-light: #fff;
+  --color-purple: #8252f1;
+  --font-heading: 'Bungee', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-accent: 'Barlow Condensed', system-ui, sans-serif;
 }
 
 img {
@@ -234,6 +238,21 @@ button.reset:hover:not(:has(> *)) {
   position: sticky;
   top: 0;
   z-index: 1;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.td-wordmark {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: var(--color-purple);
+  line-height: 1;
+  transition: opacity 200ms;
+}
+
+.td-wordmark:hover {
+  opacity: 0.8;
 }
 
 .header-menu-mobile-toggle {
@@ -288,12 +307,22 @@ button.reset:hover:not(:has(> *)) {
   display: flex;
   flex-wrap: wrap;
   grid-gap: 1rem;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
 }
 
 .footer-menu a {
   color: var(--color-light);
   min-width: fit-content;
+  font-family: var(--font-accent);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.footer-menu a:hover {
+  color: var(--color-purple);
 }
 
 /*

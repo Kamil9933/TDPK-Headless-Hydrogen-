@@ -40,17 +40,18 @@ const PROPS = [
 ];
 
 /**
- * ValueProps — a "why buy from us" row displaying 4 value propositions
- * in a responsive grid. Each item has an icon, a title, and a short line.
- *
- * Icons are inline SVGs (Heroicons) to avoid any external dependency.
+ * ValueProps — "why buy from us" row on light background.
+ * Purple accent icons, black text.
  */
 export function ValueProps() {
   return (
-    <section className="border-t border-b border-neutral-800 bg-neutral-950 py-16 px-6">
+    <section className="border-t border-b border-neutral-200 bg-neutral-50 py-16 px-6">
       <div className="mx-auto max-w-5xl">
         <Reveal>
-          <p className="mb-12 text-center text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+          <p
+            className="mb-12 text-center text-sm font-semibold uppercase tracking-[0.2em]"
+            style={{color: '#8252f1', fontFamily: 'var(--font-accent)'}}
+          >
             Why Third Dimension
           </p>
         </Reveal>
@@ -59,13 +60,16 @@ export function ValueProps() {
           {PROPS.map((prop) => (
             <Reveal key={prop.title} threshold={0.1}>
               <div className="flex flex-col items-center text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-amber-400">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-purple-200 bg-purple-50"
+                  style={{color: '#8252f1'}}
+                >
                   {prop.icon}
                 </div>
-                <h3 className="mb-1 text-sm font-semibold text-white">
+                <h3 className="mb-1 text-sm font-semibold text-black">
                   {prop.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-neutral-400">
+                <p className="text-sm leading-relaxed text-neutral-500">
                   {prop.text}
                 </p>
               </div>

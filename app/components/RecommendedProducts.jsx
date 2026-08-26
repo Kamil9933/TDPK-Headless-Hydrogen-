@@ -4,10 +4,8 @@ import {ProductItem} from '~/components/ProductItem';
 import {Reveal} from '~/components/Reveal';
 
 /**
- * RecommendedProducts — restyled recommended products section.
- * Keeps the exact same Suspense / Await streaming pattern from the
- * original loader (deferred data). Only the markup and Tailwind classes
- * have changed.
+ * RecommendedProducts — restyled for light brand identity.
+ * White background, black text, skeleton loaders with light grey tones.
  *
  * @param {{
  *   products: Promise<RecommendedProductsQuery | null>;
@@ -16,17 +14,21 @@ import {Reveal} from '~/components/Reveal';
 export function RecommendedProducts({products}) {
   return (
     <section
-      className="bg-neutral-950 py-20 px-6"
+      className="bg-neutral-50 py-20 px-6"
       aria-labelledby="recommended-products"
     >
       <div className="mx-auto max-w-6xl">
         <Reveal>
-          <p className="mb-3 text-center text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+          <p
+            className="mb-3 text-center text-sm font-semibold uppercase tracking-[0.2em]"
+            style={{color: '#8252f1', fontFamily: 'var(--font-accent)'}}
+          >
             Just Dropped
           </p>
           <h2
             id="recommended-products"
-            className="mb-12 text-center text-3xl font-bold tracking-tight text-white sm:text-4xl"
+            className="mb-12 text-center text-3xl font-bold tracking-tight text-black sm:text-4xl"
+            style={{fontFamily: 'var(--font-heading)'}}
           >
             Recommended
           </h2>
@@ -39,12 +41,12 @@ export function RecommendedProducts({products}) {
                 (id) => (
                   <div
                     key={id}
-                    className="animate-pulse rounded-xl bg-neutral-900"
+                    className="animate-pulse rounded-xl bg-white shadow-sm"
                   >
-                    <div className="aspect-square rounded-t-xl bg-neutral-800" />
+                    <div className="aspect-square rounded-t-xl bg-neutral-200" />
                     <div className="space-y-2 p-4">
-                      <div className="h-4 w-3/4 rounded bg-neutral-800" />
-                      <div className="h-3 w-1/2 rounded bg-neutral-800" />
+                      <div className="h-4 w-3/4 rounded bg-neutral-200" />
+                      <div className="h-3 w-1/2 rounded bg-neutral-200" />
                     </div>
                   </div>
                 ),

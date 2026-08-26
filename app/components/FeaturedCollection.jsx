@@ -3,9 +3,8 @@ import {Image} from '@shopify/hydrogen';
 import {Reveal} from '~/components/Reveal';
 
 /**
- * FeaturedCollection — restyled featured collection section.
- * Receives the same collection data from the loader (unchanged).
- * Uses Tailwind utility classes instead of the original CSS class names.
+ * FeaturedCollection — restyled for light brand identity.
+ * White background, black text, purple accent.
  *
  * @param {{
  *   collection: FeaturedCollectionFragment;
@@ -17,13 +16,19 @@ export function FeaturedCollection({collection}) {
   const image = collection?.image;
 
   return (
-    <section className="bg-neutral-950 py-20 px-6">
+    <section className="bg-white py-20 px-6">
       <div className="mx-auto max-w-6xl">
         <Reveal>
-          <p className="mb-3 text-center text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+          <p
+            className="mb-3 text-center text-sm font-semibold uppercase tracking-[0.2em]"
+            style={{color: '#8252f1', fontFamily: 'var(--font-accent)'}}
+          >
             Featured
           </p>
-          <h2 className="mb-12 text-center text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h2
+            className="mb-12 text-center text-3xl font-bold tracking-tight text-black sm:text-4xl"
+            style={{fontFamily: 'var(--font-heading)'}}
+          >
             {collection.title}
           </h2>
         </Reveal>
@@ -31,7 +36,7 @@ export function FeaturedCollection({collection}) {
         <Reveal threshold={0.1}>
           <Link
             to={`/collections/${collection.handle}`}
-            className="group block overflow-hidden rounded-2xl"
+            className="group block overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-xl"
           >
             {image && (
               <div className="aspect-[16/7] overflow-hidden">
@@ -44,11 +49,14 @@ export function FeaturedCollection({collection}) {
               </div>
             )}
 
-            <div className="flex items-center justify-between bg-neutral-900 px-6 py-5">
-              <span className="text-lg font-semibold text-white">
+            <div className="flex items-center justify-between bg-black px-6 py-5">
+              <span
+                className="text-lg font-semibold text-white"
+                style={{fontFamily: 'var(--font-accent)'}}
+              >
                 View Collection
               </span>
-              <span className="text-neutral-400 transition group-hover:translate-x-1 group-hover:text-white">
+              <span className="text-neutral-400 transition group-hover:translate-x-1 group-hover:text-[#8252f1]">
                 &rarr;
               </span>
             </div>

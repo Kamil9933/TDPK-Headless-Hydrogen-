@@ -7,11 +7,11 @@ import {useAside} from '~/components/Aside';
  * @param {HeaderProps}
  */
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
-  const {shop, menu} = header;
+  const {menu} = header;
   return (
     <header className="header">
-      <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
-        <strong>{shop.name}</strong>
+      <NavLink prefetch="intent" to="/" className="td-wordmark">
+        TD
       </NavLink>
       <HeaderMenu
         menu={menu}
@@ -219,7 +219,7 @@ const FALLBACK_HEADER_MENU = {
 function activeLinkStyle({isActive, isPending}) {
   return {
     fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
+    color: isPending ? 'grey' : '#8252f1',
   };
 }
 
