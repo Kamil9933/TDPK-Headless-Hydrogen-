@@ -1,14 +1,19 @@
-import {Await, useLoaderData, Link} from 'react-router';
-import {Suspense} from 'react';
-import {Image} from '@shopify/hydrogen';
-import {ProductItem} from '~/components/ProductItem';
+import {useLoaderData} from 'react-router';
 import {MockShopNotice} from '~/components/MockShopNotice';
+import {Hero} from '~/components/Hero';
+import {FeaturedCollection} from '~/components/FeaturedCollection';
+import {RecommendedProducts} from '~/components/RecommendedProducts';
+import {ValueProps} from '~/components/ValueProps';
+import {BrandStory} from '~/components/BrandStory';
+import {Newsletter} from '~/components/Newsletter';
+
+const FEATURED_COLLECTION_HANDLE = 'hydrogen'; // swap for a real collection handle later
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: 'Hydrogen | Home'}];
+  return [{title: 'Third Dimension | Home'}];
 };
 
 /**
@@ -30,14 +35,15 @@ export async function loader(args) {
  * @param {Route.LoaderArgs}
  */
 async function loadCriticalData({context}) {
-  const [{collections}] = await Promise.all([
-    context.storefront.query(FEATURED_COLLECTION_QUERY),
-    // Add other queries here, so that they are loaded in parallel
+  const [{collection}] = await Promise.all([
+    context.storefront.query(FEATURED_COLLECTION_QUERY, {
+      variables: {handle: FEATURED_COLLECTION_HANDLE},
+    }),
   ]);
 
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
-    featuredCollection: collections.nodes[0],
+    featuredCollection: collection,
   };
 }
 
@@ -65,68 +71,15 @@ export default function Homepage() {
   /** @type {LoaderReturnData} */
   const data = useLoaderData();
   return (
-    <div className="home">
+    <div>
       {data.isShopLinked ? null : <MockShopNotice />}
+      <Hero />
       <FeaturedCollection collection={data.featuredCollection} />
+      <ValueProps />
+      <BrandStory />
       <RecommendedProducts products={data.recommendedProducts} />
+      <Newsletter />
     </div>
-  );
-}
-
-/**
- * @param {{
- *   collection: FeaturedCollectionFragment;
- * }}
- */
-function FeaturedCollection({collection}) {
-  if (!collection) return null;
-  const image = collection?.image;
-  return (
-    <Link
-      className="featured-collection"
-      to={`/collections/${collection.handle}`}
-    >
-      {image && (
-        <div className="featured-collection-image">
-          <Image
-            data={image}
-            sizes="100vw"
-            alt={image.altText || collection.title}
-          />
-        </div>
-      )}
-      <h1>{collection.title}</h1>
-    </Link>
-  );
-}
-
-/**
- * @param {{
- *   products: Promise<RecommendedProductsQuery | null>;
- * }}
- */
-function RecommendedProducts({products}) {
-  return (
-    <section
-      className="recommended-products"
-      aria-labelledby="recommended-products"
-    >
-      <h2 id="recommended-products">Recommended Products</h2>
-      <Suspense fallback={<div>Loading...</div>}>
-        <Await resolve={products}>
-          {(response) => (
-            <div className="recommended-products-grid">
-              {response
-                ? response.products.nodes.map((product) => (
-                    <ProductItem key={product.id} product={product} />
-                  ))
-                : null}
-            </div>
-          )}
-        </Await>
-      </Suspense>
-      <br />
-    </section>
   );
 }
 
@@ -143,12 +96,10 @@ const FEATURED_COLLECTION_QUERY = `#graphql
     }
     handle
   }
-  query FeaturedCollection($country: CountryCode, $language: LanguageCode)
+  query FeaturedCollection($handle: String!, $country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    collections(first: 1, sortKey: UPDATED_AT, reverse: true) {
-      nodes {
-        ...FeaturedCollection
-      }
+    collection(handle: $handle) {
+      ...FeaturedCollection
     }
   }
 `;
