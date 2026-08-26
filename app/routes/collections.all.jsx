@@ -43,11 +43,13 @@ export default function Collection() {
   const [pageInfo, setPageInfo] = useState(initialProducts.pageInfo);
   const fetcher = useFetcher();
   const sentinelRef = useRef(null);
+  const fetchingRef = useRef(false);
 
   useEffect(() => {
     if (fetcher.data?.products) {
       setProducts((prev) => [...prev, ...fetcher.data.products.nodes]);
       setPageInfo(fetcher.data.products.pageInfo);
+      fetchingRef.current = false;
     }
   }, [fetcher.data]);
 
@@ -57,9 +59,14 @@ export default function Collection() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && pageInfo.endCursor && fetcher.state === 'idle') {
+        if (
+          entry.isIntersecting &&
+          pageInfo.endCursor &&
+          !fetchingRef.current
+        ) {
+          fetchingRef.current = true;
           fetcher.submit(
-            {after: pageInfo.endCursor},
+            {cursor: pageInfo.endCursor},
             {method: 'get', action: '/collections/all'},
           );
         }
