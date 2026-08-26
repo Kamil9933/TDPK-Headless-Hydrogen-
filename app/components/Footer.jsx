@@ -1,122 +1,233 @@
-import {Suspense} from 'react';
+import {Suspense, useState} from 'react';
 import {Await, NavLink} from 'react-router';
 
 /**
- * @param {FooterProps}
+ * Footer — rebuilt for ThirdDimension brand identity.
+ * Dark footer with TD wordmark, newsletter input, multi-column nav, and copyright.
  */
 export function Footer({footer: footerPromise, header, publicStoreDomain}) {
-  return (
-    <Suspense>
-      <Await resolve={footerPromise}>
-        {(footer) => (
-          <footer className="footer">
-            {footer?.menu && header.shop.primaryDomain?.url && (
-              <FooterMenu
-                menu={footer.menu}
-                primaryDomainUrl={header.shop.primaryDomain.url}
-                publicStoreDomain={publicStoreDomain}
-              />
-            )}
-          </footer>
-        )}
-      </Await>
-    </Suspense>
-  );
-}
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-/**
- * @param {{
- *   menu: FooterQuery['menu'];
- *   primaryDomainUrl: FooterProps['header']['shop']['primaryDomain']['url'];
- *   publicStoreDomain: string;
- * }}
- */
-function FooterMenu({menu, primaryDomainUrl, publicStoreDomain}) {
-  return (
-    <nav className="footer-menu" role="navigation">
-      {(menu || FALLBACK_FOOTER_MENU).items.map((item) => {
-        if (!item.url) return null;
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        const isExternal = !url.startsWith('/');
-        return isExternal ? (
-          <a href={url} key={item.id} rel="noopener noreferrer" target="_blank">
-            {item.title}
-          </a>
-        ) : (
-          <NavLink
-            end
-            key={item.id}
-            prefetch="intent"
-            style={activeLinkStyle}
-            to={url}
-          >
-            {item.title}
-          </NavLink>
-        );
-      })}
-    </nav>
-  );
-}
-
-const FALLBACK_FOOTER_MENU = {
-  id: 'gid://shopify/Menu/199655620664',
-  items: [
-    {
-      id: 'gid://shopify/MenuItem/461633060920',
-      resourceId: 'gid://shopify/ShopPolicy/23358046264',
-      tags: [],
-      title: 'Privacy Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/privacy-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633093688',
-      resourceId: 'gid://shopify/ShopPolicy/23358013496',
-      tags: [],
-      title: 'Refund Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/refund-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633126456',
-      resourceId: 'gid://shopify/ShopPolicy/23358111800',
-      tags: [],
-      title: 'Shipping Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/shipping-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633159224',
-      resourceId: 'gid://shopify/ShopPolicy/23358079032',
-      tags: [],
-      title: 'Terms of Service',
-      type: 'SHOP_POLICY',
-      url: '/policies/terms-of-service',
-      items: [],
-    },
-  ],
-};
-
-/**
- * @param {{
- *   isActive: boolean;
- *   isPending: boolean;
- * }}
- */
-function activeLinkStyle({isActive, isPending}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : '#8252f1',
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setEmail('');
+    }
   };
+
+  return (
+    <footer className="bg-black text-white">
+      <div className="mx-auto max-w-6xl px-6 pt-16 pb-8">
+        {/* Top: Wordmark + Newsletter */}
+        <div className="mb-12 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
+          {/* TD Wordmark */}
+          <div>
+            <span
+              className="text-4xl font-bold tracking-tight text-white"
+              style={{fontFamily: 'var(--font-heading)'}}
+            >
+              TD
+            </span>
+            <p className="mt-2 max-w-xs text-sm text-neutral-400">
+              3D-printed collectibles, crafted with obsessive attention to
+              detail.
+            </p>
+          </div>
+
+          {/* Newsletter */}
+          <div className="w-full max-w-sm">
+            <h3
+              className="mb-2 text-sm font-semibold uppercase tracking-wider"
+              style={{fontFamily: 'var(--font-accent)'}}
+            >
+              Stay in the Loop
+            </h3>
+            <p className="mb-3 text-sm text-neutral-400">
+              New drops, restocks, and exclusives. No spam.
+            </p>
+            {subscribed ? (
+              <p className="text-sm font-medium" style={{color: '#8252f1'}}>
+                You&apos;re subscribed!
+              </p>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex gap-2">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="flex-1 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition focus:border-[#8252f1]"
+                />
+                <button
+                  type="submit"
+                  className="whitespace-nowrap rounded-lg bg-[#8252f1] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6b3fd4]"
+                  style={{fontFamily: 'var(--font-accent)'}}
+                >
+                  Subscribe
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Middle: Footer nav columns */}
+        <Suspense fallback={null}>
+          <Await resolve={footerPromise}>
+            {(footer) => (
+              <div className="grid grid-cols-2 gap-8 border-t border-neutral-800 py-10 sm:grid-cols-4">
+                {/* Column 1: Quick Links */}
+                <div>
+                  <h4
+                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                    style={{fontFamily: 'var(--font-accent)'}}
+                  >
+                    Quick Links
+                  </h4>
+                  <ul className="space-y-2">
+                    <FooterLink to="/collections/all">Shop All</FooterLink>
+                    <FooterLink to="/pages/contact">Contact</FooterLink>
+                    <FooterLink to="/pages/about">About</FooterLink>
+                  </ul>
+                </div>
+
+                {/* Column 2: Support */}
+                <div>
+                  <h4
+                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                    style={{fontFamily: 'var(--font-accent)'}}
+                  >
+                    Support
+                  </h4>
+                  <ul className="space-y-2">
+                    <FooterLink to="/pages/faq">FAQ</FooterLink>
+                    <FooterLink to="/policies/shipping-policy">
+                      Shipping
+                    </FooterLink>
+                    <FooterLink to="/policies/refund-policy">
+                      Returns
+                    </FooterLink>
+                    <FooterLink to="/policies/privacy-policy">
+                      Privacy Policy
+                    </FooterLink>
+                    <FooterLink to="/policies/terms-of-service">
+                      Terms of Service
+                    </FooterLink>
+                  </ul>
+                </div>
+
+                {/* Column 3: Connect */}
+                <div>
+                  <h4
+                    className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                    style={{fontFamily: 'var(--font-accent)'}}
+                  >
+                    Connect
+                  </h4>
+                  <ul className="space-y-2">
+                    <FooterExternalLink href="https://instagram.com">
+                      Instagram
+                    </FooterExternalLink>
+                    <FooterExternalLink href="https://facebook.com">
+                      Facebook
+                    </FooterExternalLink>
+                    <FooterExternalLink href="https://tiktok.com">
+                      TikTok
+                    </FooterExternalLink>
+                  </ul>
+                </div>
+
+                {/* Column 4: Dynamic menu from Shopify */}
+                {footer?.menu && (
+                  <div>
+                    <h4
+                      className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400"
+                      style={{fontFamily: 'var(--font-accent)'}}
+                    >
+                      More
+                    </h4>
+                    <ul className="space-y-2">
+                      {(footer.menu || []).items.map((item) => {
+                        if (!item.url) return null;
+                        const url =
+                          item.url.includes('myshopify.com') ||
+                          item.url.includes(publicStoreDomain) ||
+                          (header?.shop?.primaryDomain?.url &&
+                            item.url.includes(header.shop.primaryDomain.url))
+                            ? new URL(item.url).pathname
+                            : item.url;
+                        const isExternal = !url.startsWith('/');
+                        return isExternal ? (
+                          <li key={item.id}>
+                            <a
+                              href={url}
+                              rel="noopener noreferrer"
+                              target="_blank"
+                              className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+                            >
+                              {item.title}
+                            </a>
+                          </li>
+                        ) : (
+                          <li key={item.id}>
+                            <NavLink
+                              end
+                              prefetch="intent"
+                              to={url}
+                              className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+                            >
+                              {item.title}
+                            </NavLink>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </Await>
+        </Suspense>
+
+        {/* Bottom: Copyright */}
+        <div className="border-t border-neutral-800 pt-6 text-center text-xs text-neutral-500">
+          &copy; {new Date().getFullYear()} ThirdDimension. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function FooterLink({to, children}) {
+  return (
+    <li>
+      <NavLink
+        end
+        prefetch="intent"
+        to={to}
+        className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+      >
+        {children}
+      </NavLink>
+    </li>
+  );
+}
+
+function FooterExternalLink({href, children}) {
+  return (
+    <li>
+      <a
+        href={href}
+        rel="noopener noreferrer"
+        target="_blank"
+        className="text-sm text-neutral-400 transition hover:text-[#8252f1]"
+      >
+        {children}
+      </a>
+    </li>
+  );
 }
 
 /**
