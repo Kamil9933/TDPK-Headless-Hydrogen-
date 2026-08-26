@@ -3,6 +3,7 @@ import {MockShopNotice} from '~/components/MockShopNotice';
 import {Hero} from '~/components/Hero';
 import {FeaturedCollection} from '~/components/FeaturedCollection';
 import {ShopByFranchise} from '~/components/ShopByFranchise';
+import {ShopByCategory} from '~/components/ShopByCategory';
 import {NewArrivals} from '~/components/NewArrivals';
 import {BestSellers} from '~/components/BestSellers';
 import {ValueProps} from '~/components/ValueProps';
@@ -18,6 +19,63 @@ const HOMEPAGE_FRANCHISE_TAG =
   HOMEPAGE_FRANCHISE_TAGS[
     Math.floor(Math.random() * HOMEPAGE_FRANCHISE_TAGS.length)
   ];
+
+// Exact real collection titles (case-insensitive match against the
+// storefront) used to pick which collections populate the Shop by
+// Franchise / Shop by Category homepage sections. Order here is the
+// display order, not the order Shopify returns them in.
+const FRANCHISE_TITLES = [
+  'Star Wars',
+  'Batman 3D Prints',
+  'Marvel',
+  'Dc Comics',
+  'One Piece',
+  'Dragon ball',
+  'Pokémon',
+  'Lord of The Rings',
+  'Avengers',
+  'F1',
+];
+
+const CATEGORY_TITLES = [
+  'Home Decor',
+  'Wall Art',
+  'Toys',
+  'Desk Items',
+  'Key Chain',
+  'Phone Stands',
+  'Storage Box',
+  'Vase',
+  'Jewelry Box',
+];
+
+/**
+ * Picks collections from a fetched list by exact (case-insensitive) title
+ * match, in the order given by `titles`, skipping any that don't exist on
+ * this store or have zero products.
+ */
+function pickByTitles(collections, titles) {
+  const byTitle = new Map(
+    (collections || []).map((c) => [c.title.trim().toLowerCase(), c]),
+  );
+  return titles
+    .map((t) => byTitle.get(t.trim().toLowerCase()))
+    .filter((c) => c && c.products?.nodes?.length > 0);
+}
+
+/**
+ * Filters out known scaffold/junk products (leftover Hydrogen demo data)
+ * that shouldn't appear in any product rail.
+ */
+function filterJunkProducts(nodes) {
+  return (nodes || []).filter(
+    (p) =>
+      p.featuredImage &&
+      p.title &&
+      !p.title.includes('Single line text') &&
+      p.title !== 'Frame',
+  );
+}
 
 /**
  * @type {Route.MetaFunction}
@@ -35,72 +93,54 @@ export async function loader(args) {
   return {...deferredData, ...criticalData};
 }
 
+/**
+ * Everything the homepage needs to render its first paint is fetched here,
+ * awaited, so ShopByFranchise / ShopByCategory / NewArrivals / BestSellers
+ * always receive real resolved arrays (never a pending Promise).
+ */
 async function loadCriticalData({context}) {
-  const [{collection}] = await Promise.all([
+  const [
+    {collection},
+    newArrivalsResult,
+    bestSellersResult,
+    allCollectionsResult,
+  ] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY, {
       variables: {handle: FEATURED_COLLECTION_HANDLE},
     }),
+    context.storefront.query(NEW_ARRIVALS_QUERY),
+    context.storefront.query(BEST_SELLERS_QUERY),
+    context.storefront.query(ALL_COLLECTIONS_QUERY),
   ]);
+
+  const allCollections = allCollectionsResult?.collections?.nodes || [];
 
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
     featuredCollection: collection,
+    newArrivals: filterJunkProducts(newArrivalsResult?.products?.nodes),
+    bestSellers: filterJunkProducts(bestSellersResult?.products?.nodes),
+    franchiseCollections: pickByTitles(allCollections, FRANCHISE_TITLES),
+    categoryCollections: pickByTitles(allCollections, CATEGORY_TITLES),
   };
 }
 
+/**
+ * Only the "Recommended" rail stays deferred/streamed — it's the one
+ * section already correctly wrapped in <Suspense><Await> by
+ * ProductCarousel, so there's no benefit to blocking first paint on it.
+ */
 function loadDeferredData({context}) {
   const recommendedProducts = context.storefront
     .query(RECOMMENDED_PRODUCTS_QUERY)
-    .catch(() => null);
-
-  const franchiseCollections = context.storefront
-    .query(FRANCHISE_COLLECTIONS_QUERY)
-    .catch(() => null);
-
-  const newArrivals = context.storefront
-    .query(NEW_ARRIVALS_QUERY)
-    .catch(() => null);
-
-  const bestSellers = context.storefront
-    .query(BEST_SELLERS_QUERY)
-    .catch(() => null);
-
-  return {
-    recommendedProducts: recommendedProducts.then((data) => {
+    .then((data) => {
       if (!data?.products?.nodes) return data;
-      data.products.nodes = data.products.nodes.filter(
-        (p) =>
-          p.featuredImage &&
-          p.title &&
-          !p.title.includes('Single line text') &&
-          p.title !== 'Frame',
-      );
+      data.products.nodes = filterJunkProducts(data.products.nodes);
       return data;
-    }),
-    franchiseCollections,
-    newArrivals: newArrivals.then((data) => {
-      if (!data?.products?.nodes) return data;
-      data.products.nodes = data.products.nodes.filter(
-        (p) =>
-          p.featuredImage &&
-          p.title &&
-          !p.title.includes('Single line text') &&
-          p.title !== 'Frame',
-      );
-      return data;
-    }),
-    bestSellers: bestSellers.then((data) => {
-      if (!data?.products?.nodes) return data;
-      data.products.nodes = data.products.nodes.filter(
-        (p) =>
-          p.featuredImage &&
-          p.title &&
-          !p.title.includes('Single line text') &&
-          p.title !== 'Frame',
-      );
-      return data;
-    }),
-  };
+    })
+    .catch(() => null);
+
+  return {recommendedProducts};
 }
 
 export default function Homepage() {
@@ -112,9 +152,10 @@ export default function Homepage() {
       <FranchiseCameo tags={[HOMEPAGE_FRANCHISE_TAG]} trigger="scroll" />
       <Hero />
       <FeaturedCollection collection={data.featuredCollection} />
-      <ShopByFranchise collections={data.franchiseCollections?.collections?.nodes} />
-      <NewArrivals products={data.newArrivals?.products?.nodes} />
-      <BestSellers products={data.bestSellers?.products?.nodes} />
+      <ShopByFranchise collections={data.franchiseCollections} />
+      <ShopByCategory collections={data.categoryCollections} />
+      <NewArrivals products={data.newArrivals} />
+      <BestSellers products={data.bestSellers} />
       <ValueProps />
       <BrandStory />
       <ProductCarousel products={data.recommendedProducts} />
@@ -168,14 +209,15 @@ const COLLECTION_TILE_FRAGMENT = `#graphql
   }
 `;
 
-const FRANCHISE_COLLECTIONS_QUERY = `#graphql
+// Fetches every collection once; the homepage then picks Shop by
+// Franchise / Shop by Category members from this single list by exact
+// title match (see pickByTitles above) rather than relying on a fuzzy
+// search string, which isn't reliable for exact-title lookups.
+const ALL_COLLECTIONS_QUERY = `#graphql
   ${COLLECTION_TILE_FRAGMENT}
-  query FranchiseCollections($country: CountryCode, $language: LanguageCode)
+  query AllCollections($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    collections: collections(
-      first: 10,
-      query: "star-wars OR batman OR one-piece OR geeky"
-    ) {
+    collections(first: 250) {
       nodes {
         ...CollectionTile
       }

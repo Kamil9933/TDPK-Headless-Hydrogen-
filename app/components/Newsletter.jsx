@@ -8,7 +8,7 @@ import {Reveal} from '~/components/Reveal';
  */
 export function Newsletter() {
   return (
-    <section className="bg-white py-20 px-6">
+    <section className="bg-neutral-50 py-20 px-6">
       <div className="mx-auto max-w-xl text-center">
         <Reveal>
           <p

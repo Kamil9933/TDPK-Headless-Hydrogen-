@@ -9,7 +9,7 @@ import {Link} from 'react-router';
  */
 export function Hero() {
   return (
-    <section className="relative flex min-h-[92vh] items-center justify-center overflow-hidden bg-gradient-to-b from-purple-50 via-white to-white">
+    <section className="relative flex min-h-[82vh] items-center justify-center overflow-hidden bg-gradient-to-b from-purple-50 via-white to-white">
       {/* Subtle dot grid overlay for texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.3]"
@@ -49,6 +49,12 @@ export function Hero() {
         >
           Browse the Collection
         </Link>
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 animate-bounce text-neutral-400">
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
       </div>
     </section>
   );
