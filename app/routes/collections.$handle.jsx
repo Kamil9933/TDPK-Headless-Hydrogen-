@@ -1,8 +1,8 @@
-import {redirect, useLoaderData} from 'react-router';
+import {redirect, useLoaderData, useFetcher} from 'react-router';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {useEffect, useRef, useState} from 'react';
 
 /**
  * @type {Route.MetaFunction}
@@ -15,20 +15,11 @@ export const meta = ({data}) => {
  * @param {Route.LoaderArgs} args
  */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
 async function loadCriticalData({context, params, request}) {
   const {handle} = params;
   const {storefront} = context;
@@ -43,54 +34,91 @@ async function loadCriticalData({context, params, request}) {
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
     }),
   ]);
 
   if (!collection) {
-    throw new Response(`Collection ${handle} not found`, {
-      status: 404,
-    });
+    throw new Response(`Collection ${handle} not found`, {status: 404});
   }
 
-  // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
-  return {
-    collection,
-  };
+  return {collection};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
 export default function Collection() {
-  /** @type {LoaderReturnData} */
   const {collection} = useLoaderData();
+  const [products, setProducts] = useState(collection.products.nodes);
+  const [pageInfo, setPageInfo] = useState(collection.products.pageInfo);
+  const fetcher = useFetcher();
+  const sentinelRef = useRef(null);
+
+  // Append new products when fetcher returns data
+  useEffect(() => {
+    if (fetcher.data?.products) {
+      setProducts((prev) => [...prev, ...fetcher.data.products.nodes]);
+      setPageInfo(fetcher.data.products.pageInfo);
+    }
+  }, [fetcher.data]);
+
+  // Infinite scroll: observe sentinel, fetch next page when visible
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !pageInfo.hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && pageInfo.endCursor && fetcher.state === 'idle') {
+          fetcher.submit(
+            {after: pageInfo.endCursor},
+            {method: 'get', action: `/collections/${collection.handle}`},
+          );
+        }
+      },
+      {threshold: 0.1},
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [pageInfo, fetcher, collection.handle]);
 
   return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection
-        connection={collection.products}
-        resourcesClassName="products-grid"
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <h1
+        className="mb-2 text-3xl font-bold tracking-tight text-black sm:text-4xl"
+        style={{fontFamily: 'var(--font-heading)'}}
       >
-        {({node: product, index}) => (
+        {collection.title}
+      </h1>
+      {collection.description && (
+        <p className="mb-8 max-w-2xl text-neutral-500">
+          {collection.description}
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {products.map((product, index) => (
           <ProductItem
             key={product.id}
             product={product}
-            loading={index < 8 ? 'eager' : undefined}
+            loading={index < 8 ? 'eager' : 'lazy'}
           />
-        )}
-      </PaginatedResourceSection>
+        ))}
+      </div>
+
+      {/* Infinite scroll sentinel — when this enters the viewport the next page loads */}
+      {pageInfo.hasNextPage && (
+        <div ref={sentinelRef} className="flex justify-center py-10">
+          {fetcher.state !== 'idle' && (
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-300 border-t-black" />
+          )}
+        </div>
+      )}
+
       <Analytics.CollectionView
         data={{
           collection: {
@@ -127,10 +155,14 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
         ...MoneyProductItem
       }
     }
+    compareAtPriceRange {
+      minVariantPrice {
+        ...MoneyProductItem
+      }
+    }
   }
 `;
 
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
 const COLLECTION_QUERY = `#graphql
   ${PRODUCT_ITEM_FRAGMENT}
   query Collection(

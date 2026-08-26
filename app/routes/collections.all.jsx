@@ -1,7 +1,7 @@
-import {useLoaderData} from 'react-router';
+import {useLoaderData, useFetcher} from 'react-router';
 import {getPaginationVariables} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
+import {useEffect, useRef, useState} from 'react';
 
 /**
  * @type {Route.MetaFunction}
@@ -14,20 +14,11 @@ export const meta = () => {
  * @param {Route.LoaderArgs} args
  */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
 async function loadCriticalData({context, request}) {
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
@@ -38,40 +29,74 @@ async function loadCriticalData({context, request}) {
     storefront.query(CATALOG_QUERY, {
       variables: {...paginationVariables},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
   return {products};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
 export default function Collection() {
-  /** @type {LoaderReturnData} */
-  const {products} = useLoaderData();
+  const {products: initialProducts} = useLoaderData();
+  const [products, setProducts] = useState(initialProducts.nodes);
+  const [pageInfo, setPageInfo] = useState(initialProducts.pageInfo);
+  const fetcher = useFetcher();
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    if (fetcher.data?.products) {
+      setProducts((prev) => [...prev, ...fetcher.data.products.nodes]);
+      setPageInfo(fetcher.data.products.pageInfo);
+    }
+  }, [fetcher.data]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !pageInfo.hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && pageInfo.endCursor && fetcher.state === 'idle') {
+          fetcher.submit(
+            {after: pageInfo.endCursor},
+            {method: 'get', action: '/collections/all'},
+          );
+        }
+      },
+      {threshold: 0.1},
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [pageInfo, fetcher]);
 
   return (
-    <div className="collection">
-      <h1>Products</h1>
-      <PaginatedResourceSection
-        connection={products}
-        resourcesClassName="products-grid"
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <h1
+        className="mb-8 text-3xl font-bold tracking-tight text-black sm:text-4xl"
+        style={{fontFamily: 'var(--font-heading)'}}
       >
-        {({node: product, index}) => (
+        All Products
+      </h1>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {products.map((product, index) => (
           <ProductItem
             key={product.id}
             product={product}
-            loading={index < 8 ? 'eager' : undefined}
+            loading={index < 8 ? 'eager' : 'lazy'}
           />
-        )}
-      </PaginatedResourceSection>
+        ))}
+      </div>
+
+      {pageInfo.hasNextPage && (
+        <div ref={sentinelRef} className="flex justify-center py-10">
+          {fetcher.state !== 'idle' && (
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-300 border-t-black" />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -100,10 +125,14 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
         ...MoneyCollectionItem
       }
     }
+    compareAtPriceRange {
+      minVariantPrice {
+        ...MoneyCollectionItem
+      }
+    }
   }
 `;
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/product
 const CATALOG_QUERY = `#graphql
   query Catalog(
     $country: CountryCode
