@@ -105,31 +105,54 @@ export default function Product() {
   });
 
   const {title, descriptionHtml} = product;
+  const allImages = product.images?.nodes || [];
 
   return (
-    <div className="product">
+    <div className="mx-auto max-w-6xl px-6 py-10">
       <FranchiseCameo tags={product.tags} trigger="load" />
-      <ProductImage image={selectedVariant?.image} />
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
+
+      <div className="grid gap-10 md:grid-cols-2">
+        {/* Gallery */}
+        <ProductImage
+          image={selectedVariant?.image}
+          images={allImages}
         />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
+
+        {/* Product details */}
+        <div className="flex flex-col gap-6">
+          <h1
+            className="text-3xl font-bold tracking-tight text-black sm:text-4xl"
+            style={{fontFamily: 'var(--font-heading)'}}
+          >
+            {title}
+          </h1>
+
+          <ProductPrice
+            price={selectedVariant?.price}
+            compareAtPrice={selectedVariant?.compareAtPrice}
+          />
+
+          <ProductForm
+            productOptions={productOptions}
+            selectedVariant={selectedVariant}
+          />
+
+          {/* Description */}
+          <div className="border-t border-neutral-200 pt-6">
+            <h2
+              className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500"
+              style={{fontFamily: 'var(--font-accent)'}}
+            >
+              Description
+            </h2>
+            <div
+              className="prose prose-sm max-w-none text-neutral-600"
+              dangerouslySetInnerHTML={{__html: descriptionHtml}}
+            />
+          </div>
+        </div>
       </div>
+
       <Analytics.ProductView
         data={{
           products: [
@@ -197,6 +220,15 @@ const PRODUCT_FRAGMENT = `#graphql
     tags
     encodedVariantExistence
     encodedVariantAvailability
+    images(first: 10) {
+      nodes {
+        id
+        url
+        altText
+        width
+        height
+      }
+    }
     options {
       name
       optionValues {
