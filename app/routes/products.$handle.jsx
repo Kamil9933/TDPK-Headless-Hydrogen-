@@ -1,4 +1,5 @@
-import {useLoaderData} from 'react-router';
+import {Suspense} from 'react';
+import {useLoaderData, Await} from 'react-router';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -10,6 +11,7 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {ProductItem} from '~/components/ProductItem';
 import {FranchiseCameo} from '~/components/FranchiseCameo';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
@@ -26,16 +28,9 @@ export const meta = ({data}) => {
   ];
 };
 
-/**
- * @param {Route.LoaderArgs} args
- */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
+  const deferredData = loadDeferredData(args, criticalData.product);
   return {...deferredData, ...criticalData};
 }
 
@@ -56,37 +51,40 @@ async function loadCriticalData({context, params, request}) {
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
 
   if (!product?.id) {
     throw new Response(null, {status: 404});
   }
 
-  // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
-  return {
-    product,
-  };
+  return {product};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context, params}) {
-  // Put any API calls that is not critical to be available on first page render
-  // For example: product reviews, product recommendations, social feeds.
+function loadDeferredData({context}, product) {
+  const {storefront} = context;
 
-  return {};
+  const recommendations = storefront
+    .query(RECOMMENDATIONS_QUERY, {
+      variables: {productId: product.id},
+    })
+    .then((data) => {
+      if (data?.productRecommendations?.length > 0) {
+        return data.productRecommendations;
+      }
+      return storefront
+        .query(FALLBACK_PRODUCTS_QUERY)
+        .then((fb) => fb?.products?.nodes || []);
+    })
+    .catch(() => []);
+
+  return {recommendations};
 }
 
 export default function Product() {
   /** @type {LoaderReturnData} */
-  const {product} = useLoaderData();
+  const {product, recommendations} = useLoaderData();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -152,6 +150,34 @@ export default function Product() {
           </div>
         </div>
       </div>
+
+      {/* You may also like */}
+      <Suspense>
+        <Await resolve={recommendations}>
+          {(items) => {
+            if (!items || items.length === 0) return null;
+            return (
+              <section className="mt-16 border-t border-neutral-200 pt-10">
+                <h2
+                  className="mb-6 text-2xl font-bold tracking-tight text-black"
+                  style={{fontFamily: 'var(--font-heading)'}}
+                >
+                  You may also like
+                </h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  {items.map((item) => (
+                    <ProductItem
+                      key={item.id}
+                      product={item}
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          }}
+        </Await>
+      </Suspense>
 
       <Analytics.ProductView
         data={{
@@ -272,6 +298,71 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
+`;
+
+const RECOMMENDATIONS_QUERY = `#graphql
+  query ProductRecommendations(
+    $productId: ID!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    productRecommendations(productId: $productId) {
+      id
+      title
+      handle
+      featuredImage {
+        id
+        url
+        altText
+        width
+        height
+      }
+      priceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+      compareAtPriceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+`;
+
+const FALLBACK_PRODUCTS_QUERY = `#graphql
+  query FallbackProducts($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    products(first: 4, sortKey: UPDATED_AT, reverse: true) {
+      nodes {
+        id
+        title
+        handle
+        featuredImage {
+          id
+          url
+          altText
+          width
+          height
+        }
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        compareAtPriceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
 `;
 
 /** @typedef {import('./+types/products.$handle').Route} Route */
