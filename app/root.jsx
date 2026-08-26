@@ -133,10 +133,22 @@ function loadDeferredData({context}) {
       console.error(error);
       return null;
     });
+
+  // Fetch collections for the header dropdown
+  const collections = storefront
+    .query(COLLECTIONS_QUERY, {
+      cache: storefront.CacheLong(),
+    })
+    .catch((error) => {
+      console.error(error);
+      return null;
+    });
+
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
     footer,
+    collections,
   };
 }
 
@@ -227,3 +239,16 @@ export function ErrorBoundary() {
 /** @typedef {import('react-router').ShouldRevalidateFunction} ShouldRevalidateFunction */
 /** @typedef {import('./+types/root').Route} Route */
 /** @typedef {ReturnType<typeof useLoaderData<typeof loader>>} LoaderReturnData */
+
+const COLLECTIONS_QUERY = `#graphql
+  query Collections($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collections(first: 20, sortKey: UPDATED_AT) {
+      nodes {
+        id
+        title
+        handle
+      }
+    }
+  }
+`;
