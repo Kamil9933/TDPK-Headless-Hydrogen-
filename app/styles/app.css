@@ -672,3 +672,78 @@ button.reset:hover:not(:has(> *)) {
   gap: 0.75rem;
   flex-wrap: wrap;
 }
+
+/*
+ * --------------------------------------------------
+ * Page content (Shopify Pages body HTML)
+ * --------------------------------------------------
+ */
+.page-content h1,
+.page-content h2,
+.page-content h3,
+.page-content h4,
+.page-content h5,
+.page-content h6 {
+  color: #000;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-content h1 { font-size: 2rem; }
+.page-content h2 { font-size: 1.5rem; }
+.page-content h3 { font-size: 1.25rem; }
+
+.page-content p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+
+.page-content a {
+  color: #8252f1;
+  text-decoration: none;
+}
+
+.page-content a:hover {
+  text-decoration: underline;
+}
+
+.page-content ul,
+.page-content ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.page-content ul {
+  list-style-type: disc;
+}
+
+.page-content ol {
+  list-style-type: decimal;
+}
+
+.page-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.page-content img {
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  max-width: 100%;
+  height: auto;
+}
+
+.page-content blockquote {
+  border-left: 3px solid #8252f1;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: #525252;
+  font-style: italic;
+}
+
+.page-content strong {
+  color: #000;
+  font-weight: 600;
+}

@@ -5,27 +5,18 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+  return [{title: `ThirdDimension | ${data?.page.title ?? ''}`}];
 };
 
 /**
  * @param {Route.LoaderArgs} args
  */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
 async function loadCriticalData({context, request, params}) {
   if (!params.handle) {
     throw new Error('Missing page handle');
@@ -33,11 +24,8 @@ async function loadCriticalData({context, request, params}) {
 
   const [{page}] = await Promise.all([
     context.storefront.query(PAGE_QUERY, {
-      variables: {
-        handle: params.handle,
-      },
+      variables: {handle: params.handle},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
 
   if (!page) {
@@ -46,31 +34,38 @@ async function loadCriticalData({context, request, params}) {
 
   redirectIfHandleIsLocalized(request, {handle: params.handle, data: page});
 
-  return {
-    page,
-  };
+  return {page};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
+/**
+ * Page — renders Shopify page body HTML with brand-identity styles.
+ * Used for About, Contact, FAQ, and any other /pages/* routes.
+ */
 export default function Page() {
-  /** @type {LoaderReturnData} */
   const {page} = useLoaderData();
 
   return (
-    <div className="page">
-      <header>
-        <h1>{page.title}</h1>
-      </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
+    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+      <h1
+        className="mb-8 text-3xl font-bold tracking-tight text-black sm:text-4xl"
+        style={{fontFamily: 'var(--font-heading)'}}
+      >
+        {page.title}
+      </h1>
+
+      {/*
+       * Shopify page body is rendered as raw HTML.
+       * We apply brand-aware styles via inline CSS overrides on common
+       * HTML elements since @tailwindcss/typography is not available.
+       */}
+      <div
+        className="page-content space-y-6 text-base leading-relaxed text-neutral-700"
+        dangerouslySetInnerHTML={{__html: page.body}}
+      />
     </div>
   );
 }
