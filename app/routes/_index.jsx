@@ -1,7 +1,6 @@
 import {useLoaderData} from 'react-router';
 import {MockShopNotice} from '~/components/MockShopNotice';
 import {Hero} from '~/components/Hero';
-import {FeaturedCollection} from '~/components/FeaturedCollection';
 import {ShopByFranchise} from '~/components/ShopByFranchise';
 import {ShopByCategory} from '~/components/ShopByCategory';
 import {NewArrivals} from '~/components/NewArrivals';
@@ -11,8 +10,6 @@ import {BrandStory} from '~/components/BrandStory';
 import {ProductCarousel} from '~/components/ProductCarousel';
 import {Newsletter} from '~/components/Newsletter';
 import {FranchiseCameo} from '~/components/FranchiseCameo';
-
-const FEATURED_COLLECTION_HANDLE = 'hydrogen';
 
 const HOMEPAGE_FRANCHISE_TAGS = ['Starwars', 'Batman', 'One piece'];
 const HOMEPAGE_FRANCHISE_TAG =
@@ -64,6 +61,42 @@ function pickByTitles(collections, titles) {
 }
 
 /**
+ * Builds the final Shop by Franchise / Shop by Category tile lists.
+ * Named picks (FRANCHISE_TITLES / CATEGORY_TITLES) come first, in that
+ * order, so curated collections stay pinned at the front. Any other real
+ * collection on the store that isn't already claimed by either curated
+ * list is then appended to Shop by Franchise, so the section is never
+ * sparse just because a title didn't exactly match one of our guesses.
+ */
+function buildTilePools(allCollections, franchiseTitles, categoryTitles) {
+  const franchisePriority = pickByTitles(allCollections, franchiseTitles);
+  const categoryPriority = pickByTitles(allCollections, categoryTitles);
+  const used = new Set(
+    [...franchisePriority, ...categoryPriority].map((c) => c.handle),
+  );
+  const leftovers = (allCollections || []).filter(
+    (c) => c && c.products?.nodes?.length > 0 && !used.has(c.handle),
+  );
+  return {
+    franchiseCollections: [...franchisePriority, ...leftovers],
+    categoryCollections: categoryPriority,
+  };
+}
+
+/**
+ * Automated collections in Shopify don't get an image unless one is set
+ * manually, which is why tiles were showing as blank gray boxes. Falls
+ * back to the first product's featured image so every tile with at least
+ * one product still shows a picture.
+ */
+function withFallbackImage(collections) {
+  return (collections || []).map((c) => ({
+    ...c,
+    image: c.image || c.products?.nodes?.[0]?.featuredImage || null,
+  }));
+}
+
+/**
  * Filters out known scaffold/junk products (leftover Hydrogen demo data)
  * that shouldn't appear in any product rail.
  */
@@ -99,29 +132,26 @@ export async function loader(args) {
  * always receive real resolved arrays (never a pending Promise).
  */
 async function loadCriticalData({context}) {
-  const [
-    {collection},
-    newArrivalsResult,
-    bestSellersResult,
-    allCollectionsResult,
-  ] = await Promise.all([
-    context.storefront.query(FEATURED_COLLECTION_QUERY, {
-      variables: {handle: FEATURED_COLLECTION_HANDLE},
-    }),
+  const [newArrivalsResult, bestSellersResult, allCollectionsResult] =
+    await Promise.all([
     context.storefront.query(NEW_ARRIVALS_QUERY),
     context.storefront.query(BEST_SELLERS_QUERY),
     context.storefront.query(ALL_COLLECTIONS_QUERY),
   ]);
 
   const allCollections = allCollectionsResult?.collections?.nodes || [];
+  const {franchiseCollections, categoryCollections} = buildTilePools(
+    allCollections,
+    FRANCHISE_TITLES,
+    CATEGORY_TITLES,
+  );
 
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
-    featuredCollection: collection,
     newArrivals: filterJunkProducts(newArrivalsResult?.products?.nodes),
     bestSellers: filterJunkProducts(bestSellersResult?.products?.nodes),
-    franchiseCollections: pickByTitles(allCollections, FRANCHISE_TITLES),
-    categoryCollections: pickByTitles(allCollections, CATEGORY_TITLES),
+    franchiseCollections: withFallbackImage(franchiseCollections),
+    categoryCollections: withFallbackImage(categoryCollections),
   };
 }
 
@@ -151,7 +181,6 @@ export default function Homepage() {
       {data.isShopLinked ? null : <MockShopNotice />}
       <FranchiseCameo tags={[HOMEPAGE_FRANCHISE_TAG]} trigger="scroll" />
       <Hero />
-      <FeaturedCollection collection={data.featuredCollection} />
       <ShopByFranchise collections={data.franchiseCollections} />
       <ShopByCategory collections={data.categoryCollections} />
       <NewArrivals products={data.newArrivals} />
@@ -168,27 +197,6 @@ export default function Homepage() {
    Queries
    ────────────────────────────────────────────── */
 
-const FEATURED_COLLECTION_QUERY = `#graphql
-  fragment FeaturedCollection on Collection {
-    id
-    title
-    image {
-      id
-      url
-      altText
-      width
-      height
-    }
-    handle
-  }
-  query FeaturedCollection($handle: String!, $country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    collection(handle: $handle) {
-      ...FeaturedCollection
-    }
-  }
-`;
-
 const COLLECTION_TILE_FRAGMENT = `#graphql
   fragment CollectionTile on Collection {
     id
@@ -204,6 +212,13 @@ const COLLECTION_TILE_FRAGMENT = `#graphql
     products(first: 1) {
       nodes {
         id
+        featuredImage {
+          id
+          url
+          altText
+          width
+          height
+        }
       }
     }
   }
@@ -289,6 +304,5 @@ const BEST_SELLERS_QUERY = `#graphql
 `;
 
 /** @typedef {import('./+types/_index').Route} Route */
-/** @typedef {import('storefrontapi.generated').FeaturedCollectionFragment} FeaturedCollectionFragment */
 /** @typedef {import('storefrontapi.generated').RecommendedProductsQuery} RecommendedProductsQuery */
 /** @typedef {ReturnType<typeof useLoaderData<typeof loader>>} LoaderReturnData */
