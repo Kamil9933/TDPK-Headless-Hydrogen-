@@ -7,6 +7,8 @@ import {ValueProps} from '~/components/ValueProps';
 import {BrandStory} from '~/components/BrandStory';
 import {Newsletter} from '~/components/Newsletter';
 import {FranchiseCameo} from '~/components/FranchiseCameo';
+import {ShopByCategory} from '~/components/ShopByCategory';
+import {ProductCarousel} from '~/components/ProductCarousel';
 
 const FEATURED_COLLECTION_HANDLE = 'hydrogen'; // swap for a real collection handle later
 
@@ -85,9 +87,10 @@ export default function Homepage() {
       <FranchiseCameo tags={[HOMEPAGE_FRANCHISE_TAG]} trigger="scroll" />
       <Hero />
       <FeaturedCollection collection={data.featuredCollection} />
+      <ShopByCategory />
       <ValueProps />
       <BrandStory />
-      <RecommendedProducts products={data.recommendedProducts} />
+      <ProductCarousel products={data.recommendedProducts} />
       <Newsletter />
     </div>
   );
@@ -141,7 +144,7 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   }
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    products(first: 4, sortKey: UPDATED_AT, reverse: true) {
+    products(first: 8, sortKey: UPDATED_AT, reverse: true) {
       nodes {
         ...RecommendedProduct
       }
