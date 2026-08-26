@@ -2,18 +2,18 @@ import {useLoaderData} from 'react-router';
 import {MockShopNotice} from '~/components/MockShopNotice';
 import {Hero} from '~/components/Hero';
 import {FeaturedCollection} from '~/components/FeaturedCollection';
-import {RecommendedProducts} from '~/components/RecommendedProducts';
+import {ShopByFranchise} from '~/components/ShopByFranchise';
+import {ShopByCategory} from '~/components/ShopByCategory';
+import {NewArrivals} from '~/components/NewArrivals';
+import {BestSellers} from '~/components/BestSellers';
 import {ValueProps} from '~/components/ValueProps';
 import {BrandStory} from '~/components/BrandStory';
+import {ProductCarousel} from '~/components/ProductCarousel';
 import {Newsletter} from '~/components/Newsletter';
 import {FranchiseCameo} from '~/components/FranchiseCameo';
-import {ShopByCategory} from '~/components/ShopByCategory';
-import {ProductCarousel} from '~/components/ProductCarousel';
 
-const FEATURED_COLLECTION_HANDLE = 'hydrogen'; // swap for a real collection handle later
+const FEATURED_COLLECTION_HANDLE = 'hydrogen';
 
-// Randomly pick one of the configured franchise tags for the homepage
-// scroll-trigger cameo. This gives each page load a different signature animation.
 const HOMEPAGE_FRANCHISE_TAGS = ['Starwars', 'Batman', 'One piece'];
 const HOMEPAGE_FRANCHISE_TAG =
   HOMEPAGE_FRANCHISE_TAGS[
@@ -31,20 +31,11 @@ export const meta = () => {
  * @param {Route.LoaderArgs} args
  */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
 async function loadCriticalData({context}) {
   const [{collection}] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY, {
@@ -58,23 +49,33 @@ async function loadCriticalData({context}) {
   };
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
 function loadDeferredData({context}) {
   const recommendedProducts = context.storefront
     .query(RECOMMENDED_PRODUCTS_QUERY)
-    .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
-      console.error(error);
-      return null;
-    });
+    .catch(() => null);
+
+  const franchiseCollections = context.storefront
+    .query(FRANCHISE_COLLECTIONS_QUERY)
+    .catch(() => null);
+
+  const categoryCollections = context.storefront
+    .query(CATEGORY_COLLECTIONS_QUERY)
+    .catch(() => null);
+
+  const newArrivals = context.storefront
+    .query(NEW_ARRIVALS_QUERY)
+    .catch(() => null);
+
+  const bestSellers = context.storefront
+    .query(BEST_SELLERS_QUERY)
+    .catch(() => null);
 
   return {
     recommendedProducts,
+    franchiseCollections,
+    categoryCollections,
+    newArrivals,
+    bestSellers,
   };
 }
 
@@ -87,7 +88,10 @@ export default function Homepage() {
       <FranchiseCameo tags={[HOMEPAGE_FRANCHISE_TAG]} trigger="scroll" />
       <Hero />
       <FeaturedCollection collection={data.featuredCollection} />
-      <ShopByCategory />
+      <ShopByFranchise collections={data.franchiseCollections?.collections?.nodes} />
+      <ShopByCategory collections={data.categoryCollections?.collections?.nodes} />
+      <NewArrivals products={data.newArrivals?.products?.nodes} />
+      <BestSellers products={data.bestSellers?.collection?.products?.nodes} />
       <ValueProps />
       <BrandStory />
       <ProductCarousel products={data.recommendedProducts} />
@@ -95,6 +99,10 @@ export default function Homepage() {
     </div>
   );
 }
+
+/* ──────────────────────────────────────────────
+   Queries
+   ────────────────────────────────────────────── */
 
 const FEATURED_COLLECTION_QUERY = `#graphql
   fragment FeaturedCollection on Collection {
@@ -117,11 +125,68 @@ const FEATURED_COLLECTION_QUERY = `#graphql
   }
 `;
 
-const RECOMMENDED_PRODUCTS_QUERY = `#graphql
-  fragment RecommendedProduct on Product {
+const COLLECTION_TILE_FRAGMENT = `#graphql
+  fragment CollectionTile on Collection {
     id
     title
     handle
+    image {
+      id
+      url
+      altText
+      width
+      height
+    }
+    products(first: 1) {
+      nodes {
+        id
+      }
+    }
+  }
+`;
+
+const FRANCHISE_COLLECTIONS_QUERY = `#graphql
+  ${COLLECTION_TILE_FRAGMENT}
+  query FranchiseCollections($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collections: collections(
+      first: 10,
+      query: "star-wars OR batman-3d-prints OR marvel OR dc-comics OR one-piece OR dragon-ball OR pokemon OR lord-of-the-rings OR avengers OR f1"
+    ) {
+      nodes {
+        ...CollectionTile
+      }
+    }
+  }
+`;
+
+const CATEGORY_COLLECTIONS_QUERY = `#graphql
+  ${COLLECTION_TILE_FRAGMENT}
+  query CategoryCollections($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collections: collections(
+      first: 9,
+      query: "home-decor OR wall-art OR toys OR desk-items OR key-chain OR phone-stands OR storage-box OR vase OR jewelry-box"
+    ) {
+      nodes {
+        ...CollectionTile
+      }
+    }
+  }
+`;
+
+const PRODUCT_TILE_FRAGMENT = `#graphql
+  fragment ProductTile on Product {
+    id
+    title
+    handle
+    featuredImage {
+      id
+      url
+      altText
+      width
+      height
+    }
     priceRange {
       minVariantPrice {
         amount
@@ -134,19 +199,44 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
         currencyCode
       }
     }
-    featuredImage {
-      id
-      url
-      altText
-      width
-      height
-    }
   }
-  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
+`;
+
+const RECOMMENDED_PRODUCTS_QUERY = `#graphql
+  ${PRODUCT_TILE_FRAGMENT}
+  query RecommendedProducts($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
     products(first: 8, sortKey: UPDATED_AT, reverse: true) {
       nodes {
-        ...RecommendedProduct
+        ...ProductTile
+      }
+    }
+  }
+`;
+
+const NEW_ARRIVALS_QUERY = `#graphql
+  ${PRODUCT_TILE_FRAGMENT}
+  query NewArrivals($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    products(first: 12, sortKey: CREATED_AT, reverse: true) {
+      nodes {
+        ...ProductTile
+      }
+    }
+  }
+`;
+
+const BEST_SELLERS_QUERY = `#graphql
+  ${PRODUCT_TILE_FRAGMENT}
+  query BestSellers($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collection(handle: "best-sellers") {
+      id
+      title
+      products(first: 12) {
+        nodes {
+          ...ProductTile
+        }
       }
     }
   }

@@ -1,53 +1,74 @@
 import {Link} from 'react-router';
+import {Image} from '@shopify/hydrogen';
 import {Reveal} from '~/components/Reveal';
 
-const CATEGORIES = [
-  {title: 'Star Wars', handle: 'star-wars', emoji: '⭐'},
-  {title: 'Batman', handle: 'batman', emoji: '🦇'},
-  {title: 'One Piece', handle: 'one-piece', emoji: '🏴‍☠️'},
-  {title: 'Dragon Ball', handle: 'dragon-ball', emoji: '🐉'},
-  {title: 'Naruto', handle: 'naruto', emoji: '🍥'},
-  {title: 'Pokemon', handle: 'pokemon', emoji: '⚡'},
-  {title: 'Avengers', handle: 'avengers', emoji: '🛡️'},
-  {title: 'LOTR', handle: 'lord-of-the-rings', emoji: '💍'},
-  {title: 'F1', handle: 'f1', emoji: '🏎️'},
-];
+/**
+ * ShopByCategory — responsive grid of category collection tiles.
+ * Data is fetched in the homepage loader and passed as props.
+ * Null/empty collections are filtered out.
+ *
+ * @param {{ collections: Array<{id: string, title: string, handle: string, image?: {url: string, altText?: string}, productCount: number} | null> }}
+ */
+export function ShopByCategory({collections}) {
+  const valid = (collections || []).filter(
+    (c) => c && c.products?.nodes?.length > 0,
+  );
 
-export function ShopByCategory() {
+  if (valid.length === 0) return null;
+
   return (
-    <section className="bg-white py-20 px-6">
+    <section className="bg-neutral-50 py-20 px-6">
       <div className="mx-auto max-w-6xl">
         <Reveal>
-          <p
-            className="mb-3 text-center text-sm font-semibold uppercase tracking-[0.2em]"
-            style={{color: '#8252f1', fontFamily: 'var(--font-accent)'}}
-          >
-            Browse
-          </p>
-          <h2
-            className="mb-12 text-center text-3xl font-bold tracking-tight text-black sm:text-4xl"
-            style={{fontFamily: 'var(--font-heading)'}}
-          >
-            Shop by Category
-          </h2>
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <p
+                className="mb-3 text-sm font-semibold uppercase tracking-[0.2em]"
+                style={{color: '#8252f1', fontFamily: 'var(--font-accent)'}}
+              >
+                Collections
+              </p>
+              <h2
+                className="text-3xl font-bold tracking-tight text-black sm:text-4xl"
+                style={{fontFamily: 'var(--font-heading)'}}
+              >
+                Shop by Category
+              </h2>
+            </div>
+            <Link
+              to="/collections/all"
+              className="hidden text-sm font-medium text-neutral-500 transition hover:text-[#8252f1] sm:block"
+            >
+              View all &rarr;
+            </Link>
+          </div>
         </Reveal>
 
-        <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {CATEGORIES.map((cat, i) => (
-            <Reveal key={cat.handle} threshold={0.05}>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {valid.map((col) => (
+            <Reveal key={col.id} threshold={0.05}>
               <Link
-                to={`/collections/${cat.handle}`}
-                className="group flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-6 transition-all hover:border-[#8252f1] hover:bg-purple-50 hover:shadow-md"
+                to={`/collections/${col.handle}`}
+                className="group block overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <span className="text-4xl transition-transform group-hover:scale-110">
-                  {cat.emoji}
-                </span>
-                <span
-                  className="text-sm font-semibold text-black transition-colors group-hover:text-[#8252f1]"
-                  style={{fontFamily: 'var(--font-accent)'}}
-                >
-                  {cat.title}
-                </span>
+                <div className="relative aspect-square overflow-hidden bg-neutral-100">
+                  {col.image && (
+                    <Image
+                      data={col.image}
+                      sizes="(min-width: 1024px) 250px, (min-width: 640px) 33vw, 50vw"
+                      alt={col.image.altText || col.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  )}
+                </div>
+                <div className="p-3">
+                  <h3
+                    className="truncate text-sm font-semibold text-black"
+                    style={{fontFamily: 'var(--font-heading)'}}
+                  >
+                    {col.title}
+                  </h3>
+                </div>
               </Link>
             </Reveal>
           ))}
