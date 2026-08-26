@@ -3,7 +3,6 @@ import {MockShopNotice} from '~/components/MockShopNotice';
 import {Hero} from '~/components/Hero';
 import {FeaturedCollection} from '~/components/FeaturedCollection';
 import {ShopByFranchise} from '~/components/ShopByFranchise';
-import {ShopByCategory} from '~/components/ShopByCategory';
 import {NewArrivals} from '~/components/NewArrivals';
 import {BestSellers} from '~/components/BestSellers';
 import {ValueProps} from '~/components/ValueProps';
@@ -58,10 +57,6 @@ function loadDeferredData({context}) {
     .query(FRANCHISE_COLLECTIONS_QUERY)
     .catch(() => null);
 
-  const categoryCollections = context.storefront
-    .query(CATEGORY_COLLECTIONS_QUERY)
-    .catch(() => null);
-
   const newArrivals = context.storefront
     .query(NEW_ARRIVALS_QUERY)
     .catch(() => null);
@@ -71,11 +66,40 @@ function loadDeferredData({context}) {
     .catch(() => null);
 
   return {
-    recommendedProducts,
+    recommendedProducts: recommendedProducts.then((data) => {
+      if (!data?.products?.nodes) return data;
+      data.products.nodes = data.products.nodes.filter(
+        (p) =>
+          p.featuredImage &&
+          p.title &&
+          !p.title.includes('Single line text') &&
+          p.title !== 'Frame',
+      );
+      return data;
+    }),
     franchiseCollections,
-    categoryCollections,
-    newArrivals,
-    bestSellers,
+    newArrivals: newArrivals.then((data) => {
+      if (!data?.products?.nodes) return data;
+      data.products.nodes = data.products.nodes.filter(
+        (p) =>
+          p.featuredImage &&
+          p.title &&
+          !p.title.includes('Single line text') &&
+          p.title !== 'Frame',
+      );
+      return data;
+    }),
+    bestSellers: bestSellers.then((data) => {
+      if (!data?.products?.nodes) return data;
+      data.products.nodes = data.products.nodes.filter(
+        (p) =>
+          p.featuredImage &&
+          p.title &&
+          !p.title.includes('Single line text') &&
+          p.title !== 'Frame',
+      );
+      return data;
+    }),
   };
 }
 
@@ -89,9 +113,8 @@ export default function Homepage() {
       <Hero />
       <FeaturedCollection collection={data.featuredCollection} />
       <ShopByFranchise collections={data.franchiseCollections?.collections?.nodes} />
-      <ShopByCategory collections={data.categoryCollections?.collections?.nodes} />
       <NewArrivals products={data.newArrivals?.products?.nodes} />
-      <BestSellers products={data.bestSellers?.collection?.products?.nodes} />
+      <BestSellers products={data.bestSellers?.products?.nodes} />
       <ValueProps />
       <BrandStory />
       <ProductCarousel products={data.recommendedProducts} />
@@ -151,22 +174,7 @@ const FRANCHISE_COLLECTIONS_QUERY = `#graphql
     @inContext(country: $country, language: $language) {
     collections: collections(
       first: 10,
-      query: "star-wars OR batman-3d-prints OR marvel OR dc-comics OR one-piece OR dragon-ball OR pokemon OR lord-of-the-rings OR avengers OR f1"
-    ) {
-      nodes {
-        ...CollectionTile
-      }
-    }
-  }
-`;
-
-const CATEGORY_COLLECTIONS_QUERY = `#graphql
-  ${COLLECTION_TILE_FRAGMENT}
-  query CategoryCollections($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    collections: collections(
-      first: 9,
-      query: "home-decor OR wall-art OR toys OR desk-items OR key-chain OR phone-stands OR storage-box OR vase OR jewelry-box"
+      query: "star-wars OR batman OR one-piece OR geeky"
     ) {
       nodes {
         ...CollectionTile
@@ -230,13 +238,9 @@ const BEST_SELLERS_QUERY = `#graphql
   ${PRODUCT_TILE_FRAGMENT}
   query BestSellers($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    collection(handle: "best-sellers") {
-      id
-      title
-      products(first: 12) {
-        nodes {
-          ...ProductTile
-        }
+    products(first: 12, sortKey: BEST_SELLING) {
+      nodes {
+        ...ProductTile
       }
     }
   }

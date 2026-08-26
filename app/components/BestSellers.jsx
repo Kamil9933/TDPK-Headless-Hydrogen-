@@ -32,10 +32,10 @@ export function BestSellers({products}) {
               </h2>
             </div>
             <Link
-              to="/collections/best-sellers"
+              to="/collections/all"
               className="hidden text-sm font-medium text-neutral-500 transition hover:text-[#8252f1] sm:block"
             >
-              View collection &rarr;
+              View all &rarr;
             </Link>
           </div>
         </Reveal>
@@ -53,10 +53,10 @@ export function BestSellers({products}) {
         </ScrollCarousel>
 
         <Link
-          to="/collections/best-sellers"
+          to="/collections/all"
           className="mt-6 block text-center text-sm font-medium text-neutral-500 transition hover:text-[#8252f1] sm:hidden"
         >
-          View collection &rarr;
+          View all &rarr;
         </Link>
       </div>
     </section>
