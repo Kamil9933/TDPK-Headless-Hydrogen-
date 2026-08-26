@@ -10,6 +10,7 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {FranchiseCameo} from '~/components/FranchiseCameo';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 /**
@@ -107,6 +108,7 @@ export default function Product() {
 
   return (
     <div className="product">
+      <FranchiseCameo tags={product.tags} trigger="load" />
       <ProductImage image={selectedVariant?.image} />
       <div className="product-main">
         <h1>{title}</h1>
@@ -192,6 +194,7 @@ const PRODUCT_FRAGMENT = `#graphql
     handle
     descriptionHtml
     description
+    tags
     encodedVariantExistence
     encodedVariantAvailability
     options {

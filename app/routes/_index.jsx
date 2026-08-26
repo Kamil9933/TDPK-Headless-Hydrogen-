@@ -6,8 +6,17 @@ import {RecommendedProducts} from '~/components/RecommendedProducts';
 import {ValueProps} from '~/components/ValueProps';
 import {BrandStory} from '~/components/BrandStory';
 import {Newsletter} from '~/components/Newsletter';
+import {FranchiseCameo} from '~/components/FranchiseCameo';
 
 const FEATURED_COLLECTION_HANDLE = 'hydrogen'; // swap for a real collection handle later
+
+// Randomly pick one of the configured franchise tags for the homepage
+// scroll-trigger cameo. This gives each page load a different signature animation.
+const HOMEPAGE_FRANCHISE_TAGS = ['Starwars', 'Batman', 'One piece'];
+const HOMEPAGE_FRANCHISE_TAG =
+  HOMEPAGE_FRANCHISE_TAGS[
+    Math.floor(Math.random() * HOMEPAGE_FRANCHISE_TAGS.length)
+  ];
 
 /**
  * @type {Route.MetaFunction}
@@ -73,6 +82,7 @@ export default function Homepage() {
   return (
     <div>
       {data.isShopLinked ? null : <MockShopNotice />}
+      <FranchiseCameo tags={[HOMEPAGE_FRANCHISE_TAG]} trigger="scroll" />
       <Hero />
       <FeaturedCollection collection={data.featuredCollection} />
       <ValueProps />
