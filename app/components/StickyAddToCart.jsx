@@ -66,6 +66,11 @@ export function StickyAddToCart({product, selectedVariant, productUrl}) {
         </div>
 
         <AddToCartButton
+          className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+            isAvailable
+              ? 'bg-black text-white hover:bg-neutral-800'
+              : 'bg-neutral-300 text-neutral-500'
+          }`}
           disabled={!selectedVariant || !isAvailable}
           onClick={() => open('cart')}
           lines={
@@ -80,15 +85,7 @@ export function StickyAddToCart({product, selectedVariant, productUrl}) {
               : []
           }
         >
-          <span
-            className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-              isAvailable
-                ? 'bg-black text-white hover:bg-neutral-800'
-                : 'bg-neutral-300 text-neutral-500'
-            }`}
-          >
-            Add to Cart
-          </span>
+          Add to Cart
         </AddToCartButton>
       </div>
     </div>

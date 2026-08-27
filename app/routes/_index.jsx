@@ -2,7 +2,6 @@ import {useLoaderData} from 'react-router';
 import {MockShopNotice} from '~/components/MockShopNotice';
 import {Hero} from '~/components/Hero';
 import {CollectionCarouselSection} from '~/components/CollectionCarouselSection';
-import {NewArrivals} from '~/components/NewArrivals';
 import {BestSellers} from '~/components/BestSellers';
 import {OnSale} from '~/components/OnSale';
 import {ValueProps} from '~/components/ValueProps';
@@ -54,6 +53,17 @@ const DESK_HOME_TITLES = [
   'Vase',
 ];
 
+// Signature blockbuster franchises shown as their own dedicated rail.
+// Only collections that actually exist on the store are rendered (the
+// matcher skips nonexistent titles); Lord of the Rings / F1 aren't on the
+// store yet, so only Batman and Star Wars currently resolve, in this order.
+const BLOCKBUSTER_TITLES = [
+  'Batman',
+  'Star Wars',
+  'Lord of The Rings',
+  'F1',
+];
+
 // Configuration for every collection rail on the homepage. Adding a new
 // section is just adding one entry here (plus its title pool above).
 const COLLECTION_SECTIONS = [
@@ -92,6 +102,13 @@ const COLLECTION_SECTIONS = [
     bg: 'bg-white',
     handle: 'deskHomeCollections',
   },
+  {
+    key: 'blockbuster',
+    eyebrow: 'Iconic Universes',
+    title: 'Batman, Star Wars, LOTR & F1',
+    bg: 'bg-neutral-50',
+    handle: 'blockbusterCollections',
+  },
 ];
 
 /**
@@ -123,6 +140,7 @@ function buildTilePools(allCollections, franchiseTitles, categoryTitles) {
     {handle: 'superheroCollections', titles: SUPERHERO_TITLES},
     {handle: 'categoryCollections', titles: categoryTitles},
     {handle: 'deskHomeCollections', titles: DESK_HOME_TITLES},
+    {handle: 'blockbusterCollections', titles: BLOCKBUSTER_TITLES},
   ];
 
   const pools = {};
@@ -214,13 +232,11 @@ export async function loader(args) {
 
 /**
  * Everything the homepage needs to render its first paint is fetched here,
- * awaited, so ShopByFranchise / ShopByCategory / NewArrivals / BestSellers
+ * awaited, so ShopByFranchise / ShopByCategory / BestSellers
  * always receive real resolved arrays (never a pending Promise).
  */
 async function loadCriticalData({context}) {
-  const [newArrivalsResult, bestSellersResult, allCollectionsResult, saleResult] =
-    await Promise.all([
-    context.storefront.query(NEW_ARRIVALS_QUERY),
+  const [bestSellersResult, allCollectionsResult, saleResult] = await Promise.all([
     context.storefront.query(BEST_SELLERS_QUERY),
     context.storefront.query(ALL_COLLECTIONS_QUERY),
     context.storefront.query(ON_SALE_QUERY),
@@ -244,7 +260,6 @@ async function loadCriticalData({context}) {
       HOMEPAGE_FRANCHISE_TAGS[
         Math.floor(Math.random() * HOMEPAGE_FRANCHISE_TAGS.length)
       ],
-    newArrivals: filterJunkProducts(newArrivalsResult?.products?.nodes),
     bestSellers: filterJunkProducts(bestSellersResult?.products?.nodes),
     onSale: filterJunkProducts(saleResult?.products?.nodes).filter(
       (p) =>
@@ -293,7 +308,6 @@ export default function Homepage() {
         />
       ))}
 
-      <NewArrivals products={data.newArrivals} />
       <BestSellers products={data.bestSellers} />
       {data.onSale?.length > 0 && <OnSale products={data.onSale} />}
       <ValueProps />
@@ -383,18 +397,6 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   query RecommendedProducts($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
     products(first: 8, sortKey: UPDATED_AT, reverse: true) {
-      nodes {
-        ...ProductTile
-      }
-    }
-  }
-`;
-
-const NEW_ARRIVALS_QUERY = `#graphql
-  ${PRODUCT_TILE_FRAGMENT}
-  query NewArrivals($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    products(first: 12, sortKey: CREATED_AT, reverse: true) {
       nodes {
         ...ProductTile
       }

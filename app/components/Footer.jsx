@@ -89,7 +89,7 @@ export function Footer({footer: footerPromise, header, publicStoreDomain}) {
                   <ul className="space-y-2">
                     <FooterLink to="/collections/all">Shop All</FooterLink>
                     <FooterLink to="/pages/contact">Contact</FooterLink>
-                    <FooterLink to="/pages/about">About</FooterLink>
+                    <FooterLink to="/pages/about-us">About</FooterLink>
                   </ul>
                 </div>
 

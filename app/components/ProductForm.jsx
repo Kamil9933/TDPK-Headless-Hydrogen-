@@ -97,6 +97,11 @@ export function ProductForm({productOptions, selectedVariant}) {
       <div className="product-form-buttons flex flex-col gap-3 pt-2">
         {/* Add to Cart */}
         <AddToCartButton
+          className={`w-full cursor-pointer rounded-full px-8 py-3.5 text-center text-sm font-semibold tracking-wide transition ${
+            isAvailable
+              ? 'bg-black text-white hover:bg-neutral-800'
+              : 'cursor-not-allowed bg-neutral-300 text-neutral-500'
+          }`}
           disabled={!selectedVariant || !isAvailable}
           onClick={() => {
             open('cart');
@@ -113,15 +118,7 @@ export function ProductForm({productOptions, selectedVariant}) {
               : []
           }
         >
-          <span
-            className={`w-full cursor-pointer rounded-full px-8 py-3.5 text-center text-sm font-semibold tracking-wide transition ${
-              isAvailable
-                ? 'bg-black text-white hover:bg-neutral-800'
-                : 'cursor-not-allowed bg-neutral-300 text-neutral-500'
-            }`}
-          >
-            {isAvailable ? 'Add to Cart' : 'Sold Out'}
-          </span>
+          {isAvailable ? 'Add to Cart' : 'Sold Out'}
         </AddToCartButton>
 
         {/* Buy it Now — adds to cart and redirects to checkout */}
