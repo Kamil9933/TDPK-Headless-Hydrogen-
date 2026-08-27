@@ -58,11 +58,19 @@ export default function Collection() {
   const sentinelRef = useRef(null);
   const fetchingRef = useRef(false);
 
-  // Append new products when fetcher returns data
+  // Append new products when fetcher returns data.
+  // The loader returns the full collection object, so the next-page products
+  // live at fetcher.data.collection.products (not top-level fetcher.data.products).
   useEffect(() => {
-    if (fetcher.data?.products) {
-      setProducts((prev) => [...prev, ...fetcher.data.products.nodes]);
-      setPageInfo(fetcher.data.products.pageInfo);
+    const next = fetcher.data?.collection?.products;
+    if (fetcher.data && !next) {
+      // Fetcher completed but returned an unexpected shape — never leave the
+      // scroll lock on, or every later request would be silently blocked.
+      fetchingRef.current = false;
+    }
+    if (next) {
+      setProducts((prev) => [...prev, ...next.nodes]);
+      setPageInfo(next.pageInfo);
       fetchingRef.current = false;
     }
   }, [fetcher.data]);
