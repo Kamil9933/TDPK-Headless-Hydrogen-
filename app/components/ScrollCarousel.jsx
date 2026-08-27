@@ -25,7 +25,7 @@ export function ScrollCarousel({children, className = '', ariaLabel}) {
       <button
         type="button"
         onClick={() => scroll(-1)}
-        className="absolute -left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-black shadow-sm transition hover:border-[#8252f1] hover:text-[#8252f1] sm:-left-5"
+        className="absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-black shadow-sm transition hover:border-[#8252f1] hover:text-[#8252f1] sm:-left-5 sm:flex"
         aria-label="Scroll left"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -35,7 +35,7 @@ export function ScrollCarousel({children, className = '', ariaLabel}) {
       <button
         type="button"
         onClick={() => scroll(1)}
-        className="absolute -right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-black shadow-sm transition hover:border-[#8252f1] hover:text-[#8252f1] sm:-right-5"
+        className="absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-black shadow-sm transition hover:border-[#8252f1] hover:text-[#8252f1] sm:-right-5 sm:flex"
         aria-label="Scroll right"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

@@ -12,6 +12,8 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductItem} from '~/components/ProductItem';
+import {ProductReviews} from '~/components/ProductReviews';
+import {StickyAddToCart} from '~/components/StickyAddToCart';
 import {FranchiseCameo} from '~/components/FranchiseCameo';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
@@ -148,8 +150,18 @@ export default function Product() {
               dangerouslySetInnerHTML={{__html: descriptionHtml}}
             />
           </div>
+
+          {/* Judge.me Reviews */}
+          <ProductReviews productId={product.id} />
         </div>
       </div>
+
+      {/* Sticky mobile add-to-cart bar */}
+      <StickyAddToCart
+        product={product}
+        selectedVariant={selectedVariant}
+        productUrl={`/products/${product.handle}`}
+      />
 
       {/* You may also like */}
       <Suspense>
@@ -310,6 +322,7 @@ const RECOMMENDATIONS_QUERY = `#graphql
       id
       title
       handle
+      tags
       featuredImage {
         id
         url
@@ -341,6 +354,7 @@ const FALLBACK_PRODUCTS_QUERY = `#graphql
         id
         title
         handle
+        tags
         featuredImage {
           id
           url

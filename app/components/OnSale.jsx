@@ -3,12 +3,12 @@ import {ScrollCarousel} from '~/components/ScrollCarousel';
 import {Reveal} from '~/components/Reveal';
 
 /**
- * NewArrivals — horizontal scroll-snap carousel of the newest products.
- * Data is fetched in the homepage loader and passed as props.
+ * OnSale — horizontal scroll-snap carousel of discounted products.
+ * Mobile: 2-col grid. sm+: scroll carousel.
  *
  * @param {{ products: Array<{id: string, title: string, handle: string, featuredImage?: any, priceRange: any, compareAtPriceRange: any}> }}
  */
-export function NewArrivals({products}) {
+export function OnSale({products}) {
   if (!products || products.length === 0) return null;
 
   return (
@@ -19,13 +19,13 @@ export function NewArrivals({products}) {
             className="mb-3 text-sm font-semibold uppercase tracking-[0.2em]"
             style={{color: '#8252f1', fontFamily: 'var(--font-accent)'}}
           >
-            Just Dropped
+            Deals
           </p>
           <h2
             className="mb-8 text-3xl font-bold tracking-tight text-black sm:text-4xl"
             style={{fontFamily: 'var(--font-heading)'}}
           >
-            New Arrivals
+            On Sale
           </h2>
         </Reveal>
 
@@ -38,7 +38,7 @@ export function NewArrivals({products}) {
 
         {/* sm+: horizontal scroll carousel */}
         <div className="hidden sm:block">
-          <ScrollCarousel ariaLabel="New arrivals">
+          <ScrollCarousel ariaLabel="On sale">
             {products.map((product) => (
               <div
                 key={product.id}

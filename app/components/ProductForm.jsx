@@ -32,7 +32,8 @@ export function ProductForm({productOptions, selectedVariant}) {
         if (option.optionValues.length === 1) return null;
 
         const isColorOption =
-          option.name.toLowerCase() === 'color';
+          option.name.toLowerCase() === 'color' ||
+          option.name.toLowerCase() === 'colour';
 
         return (
           <div key={option.name}>
@@ -93,7 +94,7 @@ export function ProductForm({productOptions, selectedVariant}) {
       })}
 
       {/* --- ACTION BUTTONS --- */}
-      <div className="flex flex-col gap-3 pt-2">
+      <div className="product-form-buttons flex flex-col gap-3 pt-2">
         {/* Add to Cart */}
         <AddToCartButton
           disabled={!selectedVariant || !isAvailable}
@@ -158,9 +159,66 @@ export function ProductForm({productOptions, selectedVariant}) {
 }
 
 /**
+ * Fallback hex map for common color names when Shopify hasn't provided a
+ * swatch.color/swatch.image. Only used for recognized color names; any
+ * unrecognized value falls back to a plain-letter swatch so size/material
+ * options are never mislabeled as colors.
+ */
+const COLOR_HEX_MAP = {
+  white: '#ffffff',
+  black: '#000000',
+  gray: '#808080',
+  grey: '#808080',
+  silver: '#c0c0c0',
+  red: '#e11d48',
+  maroon: '#800000',
+  green: '#16a34a',
+  lime: '#84cc16',
+  blue: '#2563eb',
+  navy: '#1e3a8a',
+  yellow: '#eab308',
+  gold: '#d4af37',
+  orange: '#f97316',
+  brown: '#92400e',
+  pink: '#ec4899',
+  magenta: '#d946ef',
+  purple: '#a855f7',
+  violet: '#8b5cf6',
+  indigo: '#6366f1',
+  teal: '#14b8a6',
+  cyan: '#06b6d4',
+  turquoise: '#2dd4bf',
+  beige: '#d6c7a9',
+  cream: '#f5f0e1',
+  coral: '#ff7f50',
+  khaki: '#bdb76b',
+  tan: '#d2b48c',
+  'dark blue': '#1e3a8a',
+  'light blue': '#93c5fd',
+  'dark grey': '#4b5563',
+  'light grey': '#d1d5db',
+  transparent: 'transparent',
+};
+
+/**
+ * Returns a hex color for a recognizable color name, or null when the value
+ * isn't a known color (so non-color options keep plain text styling).
+ */
+function hexForColorName(name) {
+  if (!name) return null;
+  const lower = name.trim().toLowerCase();
+  if (COLOR_HEX_MAP[lower]) return COLOR_HEX_MAP[lower];
+  // Allow tokens like "2xl", "red" mixed with descriptors: match on the
+  // first word if it's a known color.
+  const firstWord = lower.split(/\s+/)[0];
+  return COLOR_HEX_MAP[firstWord] || null;
+}
+
+/**
  * ColorSwatchButton — circular swatch for color-type options.
- * Shows the swatch color/image inside a circle. Selected state uses a
- * black border + ring. Links for combined-listing products, buttons otherwise.
+ * Priority: swatch.image -> swatch.color -> color-name→hex fallback ->
+ * plain-letter. Selected state uses a black border + ring.
+ * Links for combined-listing products, buttons otherwise.
  */
 function ColorSwatchButton({
   name,
@@ -175,6 +233,7 @@ function ColorSwatchButton({
 }) {
   const swatchColor = swatch?.color;
   const swatchImage = swatch?.image?.previewImage?.url;
+  const fallbackHex = hexForColorName(name);
 
   const swatchContent = swatchImage ? (
     <img
@@ -186,6 +245,11 @@ function ColorSwatchButton({
     <span
       className="block h-full w-full rounded-full"
       style={{backgroundColor: swatchColor}}
+    />
+  ) : fallbackHex ? (
+    <span
+      className="block h-full w-full rounded-full border border-neutral-300"
+      style={{backgroundColor: fallbackHex}}
     />
   ) : (
     <span className="flex h-full w-full items-center justify-center text-xs font-medium text-neutral-600">

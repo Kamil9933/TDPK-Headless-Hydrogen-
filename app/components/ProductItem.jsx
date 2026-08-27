@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
+import {JudgeMeBadge} from '~/components/JudgeMeBadge';
 
 /**
  * @param {{
@@ -23,6 +24,12 @@ export function ProductItem({product, loading}) {
     price &&
     compareAt &&
     parseFloat(compareAt.amount) > parseFloat(price.amount);
+
+  // Surface one short descriptor line under the title using only real
+  // product data from the API — e.g. a badge-style tag when available.
+  const tag = (product.tags || []).find(
+    (t) => !['New Arrival', '3D Printed', 'Collectible', 'Gift Ideas'].includes(t),
+  );
 
   return (
     <Link
@@ -51,15 +58,21 @@ export function ProductItem({product, loading}) {
         )}
       </div>
       <div className="p-3">
-        <h4 className="mb-1 text-sm font-semibold text-black line-clamp-1">
+        <h4 className="mb-1 text-sm font-semibold leading-snug text-black line-clamp-2">
           {product.title}
         </h4>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-black">
+        <JudgeMeBadge productId={product.id} />
+        {tag && (
+          <p className="mt-1 truncate text-xs uppercase tracking-wide text-neutral-400">
+            {tag}
+          </p>
+        )}
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="text-sm font-semibold text-black">
             <Money data={price} />
           </span>
           {isOnSale && (
-            <span className="text-xs text-neutral-400 line-through">
+            <span className="text-xs font-normal text-neutral-400 line-through">
               <Money data={compareAt} />
             </span>
           )}

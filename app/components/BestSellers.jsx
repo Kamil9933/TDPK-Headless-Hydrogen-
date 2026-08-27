@@ -13,7 +13,7 @@ export function BestSellers({products}) {
   if (!products || products.length === 0) return null;
 
   return (
-    <section className="bg-neutral-50 py-20 px-6">
+    <section className="bg-neutral-50 py-14 px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <Reveal>
           <div className="mb-8 flex items-end justify-between">
@@ -40,17 +40,27 @@ export function BestSellers({products}) {
           </div>
         </Reveal>
 
-        <ScrollCarousel ariaLabel="Best sellers">
+        {/* Mobile: 2-col grid */}
+        <div className="grid grid-cols-2 gap-3 sm:hidden">
           {products.map((product) => (
-            <div
-              key={product.id}
-              className="snap-start flex-shrink-0"
-              style={{minWidth: '220px', maxWidth: '220px'}}
-            >
-              <ProductItem product={product} loading="lazy" />
-            </div>
+            <ProductItem key={product.id} product={product} loading="lazy" />
           ))}
-        </ScrollCarousel>
+        </div>
+
+        {/* sm+: horizontal scroll carousel */}
+        <div className="hidden sm:block">
+          <ScrollCarousel ariaLabel="Best sellers">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="snap-start flex-shrink-0"
+                style={{minWidth: '220px', maxWidth: '220px'}}
+              >
+                <ProductItem product={product} loading="lazy" />
+              </div>
+            ))}
+          </ScrollCarousel>
+        </div>
 
         <Link
           to="/collections/all"
