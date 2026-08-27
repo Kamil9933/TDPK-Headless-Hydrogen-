@@ -8,14 +8,9 @@ import {OnSale} from '~/components/OnSale';
 import {ValueProps} from '~/components/ValueProps';
 import {BrandStory} from '~/components/BrandStory';
 import {ProductCarousel} from '~/components/ProductCarousel';
-import {Newsletter} from '~/components/Newsletter';
 import {FranchiseCameo} from '~/components/FranchiseCameo';
 
 const HOMEPAGE_FRANCHISE_TAGS = ['Starwars', 'Batman', 'One piece'];
-const HOMEPAGE_FRANCHISE_TAG =
-  HOMEPAGE_FRANCHISE_TAGS[
-    Math.floor(Math.random() * HOMEPAGE_FRANCHISE_TAGS.length)
-  ];
 
 // Exact real collection titles (case-insensitive match against the
 // storefront) used to pick which collections populate the Shop by
@@ -143,11 +138,35 @@ function buildTilePools(allCollections, franchiseTitles, categoryTitles) {
   // appended to the franchise pool so Shop by Franchise never sits sparse
   // when a guessed title doesn't exactly match a real collection.
   const leftovers = (allCollections || []).filter(
-    (c) => c && c.products?.nodes?.length > 0 && !used.has(c.handle),
+    (c) =>
+      c &&
+      c.products?.nodes?.length > 0 &&
+      !used.has(c.handle) &&
+      !isJunkCollection(c),
   );
   pools.franchiseCollections = [...pools.franchiseCollections, ...leftovers];
 
   return pools;
+}
+
+/**
+ * Matches internal/scaffold collections that should never surface as tiles
+ * (e.g. "Home Page", "Frontpage", "Automated Collection" placeholders).
+ * Title and handle are checked case-insensitively; any match excludes the
+ * collection from the leftover pool.
+ */
+const JUNK_COLLECTION_PATTERNS = [
+  /^home page$/i,
+  /^frontpage$/i,
+  /automated collect/i,
+];
+
+function isJunkCollection(c) {
+  const title = (c.title || '').toLowerCase();
+  const handle = (c.handle || '').toLowerCase();
+  return JUNK_COLLECTION_PATTERNS.some(
+    (re) => re.test(title) || re.test(handle),
+  );
 }
 
 /**
@@ -221,6 +240,10 @@ async function loadCriticalData({context}) {
 
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
+    franchiseTag:
+      HOMEPAGE_FRANCHISE_TAGS[
+        Math.floor(Math.random() * HOMEPAGE_FRANCHISE_TAGS.length)
+      ],
     newArrivals: filterJunkProducts(newArrivalsResult?.products?.nodes),
     bestSellers: filterJunkProducts(bestSellersResult?.products?.nodes),
     onSale: filterJunkProducts(saleResult?.products?.nodes).filter(
@@ -257,7 +280,7 @@ export default function Homepage() {
   return (
     <div>
       {data.isShopLinked ? null : <MockShopNotice />}
-      <FranchiseCameo tags={[HOMEPAGE_FRANCHISE_TAG]} trigger="scroll" />
+      <FranchiseCameo tags={[data.franchiseTag]} trigger="scroll" />
       <Hero />
 
       {COLLECTION_SECTIONS.map((section) => (
@@ -276,7 +299,6 @@ export default function Homepage() {
       <ValueProps />
       <BrandStory />
       <ProductCarousel products={data.recommendedProducts} />
-      <Newsletter />
     </div>
   );
 }
